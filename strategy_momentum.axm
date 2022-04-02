@@ -1,0 +1,58 @@
+##
+https://en.m.wikipedia.org/wiki/Momentum_investing
+Interestingly, looking for downward momentum does better.
+
+Results (highest momentum):
+{
+  "avg" : 0.0949701,
+  "std" : 0.319538,
+  "min" : -0.422195,
+  "max" : 2.32904
+}
+sharpe: 0.297211
+
+Results (lowest momentum):
+{
+  "avg" : 0.145353,
+  "std" : 0.349323,
+  "min" : -0.487848,
+  "max" : 1.82272
+}
+sharpe: 0.416099
+##
+
+import('simulation.axm')
+
+:strategy(date,symbols,verbose)
+	days_back = 20 #one month
+	
+	#do "momentum", which is just price now compared to some time back
+	momentum = {}
+	for s,symbols
+		price_prev = simulation.get_price(date,s,days_back)
+		price_curr = simulation.get_price(date,s)
+		if !price_prev
+			continue
+		m = price_curr/price_prev
+		if verbose
+			print date,s,price_prev,'to',price_curr,'=',m
+		momentum[s] = m
+	
+	momentum = momentum.pairs()
+	momentum.sort_by_index(1,false) #sort by momentum, highest first
+	# momentum.sort_by_index(1,true) #sort by momentum, lowest first
+	if verbose
+		print momentum
+	allocations = {}
+	for row,momentum.slice(0,5) #pick top 5
+		symbol = row[0]
+		m = row[1]
+		allocations[symbol] = 1
+	return allocations
+
+:main()
+	print strategy('2021/01/01',['TSLA','ZM'],true)
+	#TSLA should move from ~$600 to ~$700
+	#ZM should move from ~$400 to ~$300
+
+

@@ -1,0 +1,46 @@
+##
+A strategy that cheats by looking into the future.
+
+Results:
+{
+  "avg" : 35.8404,
+  "std" : 31.8685,
+  "min" : 6.18577,
+  "max" : 229.587
+}
+sharpe: 1.12463
+##
+
+import('simulation.axm')
+
+:strategy(date,symbols,verbose)
+	
+	#cheat by looking ahead at tomorrow's price
+	changes = {}
+	for s,symbols
+		r = simulation.db.query(`
+			SELECT adjclose
+			FROM history_$s
+			WHERE date >= ?
+			ORDER BY date ASC
+			LIMIT 2
+		`,[date]).column(0)
+		price_now = r[0]
+		price_tmr = r[1]
+		changes[s] = price_tmr/price_now
+		
+	#buy top stock
+	changes = changes.pairs()
+	changes.sort_by_index(1,false)
+	if verbose
+		print changes
+	allocations = {}
+	top_stock = changes[0][0]
+	top_change = changes[0][1]
+	if top_change>0
+		allocations[top_stock] = 1
+	return allocations
+
+:main()
+	print strategy('2021/01/01',['TSLA','ZM'],true)
+

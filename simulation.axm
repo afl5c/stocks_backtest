@@ -1,0 +1,108 @@
+##
+Simulate a strategy in the stock market using historical data.
+##
+
+
+@simulation
+	#price history for NASDAQ 100 as of 2022
+	db = sqlite('history.db')
+	
+	#-end date is a date like '2022/02/02'
+	#-days is the number of days to run
+	#-period is the number of days in each step
+	#-strategy is a function that takes (date,symbols) and returns allocations
+	# -can call simulation.get_price()/get_prices() to get prices
+	# -allocations are like {symbol:weight}, where weight is an arbitrary number
+	# -after each step, the portfolio of will be automatically rebalanced to match
+	#  allocations
+	:run(end_date,days,period,strategy,verbose)
+		dates = db.query(`
+			SELECT date,symbols
+			FROM symbols_by_date
+			WHERE date <= ?
+			ORDER BY date DESC
+			LIMIT ?
+		`,[end_date,days],true)
+		index = 0
+		prev_date = null
+		allocations = {}
+		cumulative_gain = 1.0
+		for d,dates.untable().reverse()
+			if (index++)%period!=0
+				continue
+			date = d.date
+			symbols = d.symbols.parse_json()
+			
+			#calculate gain for current allocations
+			if prev_date
+				total_weight = 0
+				total_weight_sold = 0
+				for symbol,allocations
+					prev_price = db.query(`
+						SELECT adjclose
+						FROM history_$symbol
+						WHERE date = ?
+					`,[prev_date])[0][0]
+					price = db.query(`
+						SELECT adjclose
+						FROM history_$symbol
+						WHERE date = ?
+					`,[date])[0][0]
+					weight = allocations[symbol]
+					total_weight += weight
+					total_weight_sold += weight*price/prev_price
+				if total_weight
+					gain = total_weight_sold/total_weight
+				else
+					gain = 1.0
+				cumulative_gain *= gain
+				if verbose
+					print prev_date,'to',date,'=>',gain,allocations.json(false)
+			
+			#get new allocations
+			allocations = strategy(date,symbols)
+			prev_date = date
+		
+		#return final gains
+		return cumulative_gain
+	
+	#a basic strategy which buys equal amounts of each stock
+	:index(date,symbols)
+		allocations = {}
+		for s,symbols
+			allocations[s] = 1
+		return allocations
+	
+	#helper functions for strategies
+	
+	#get price for symbol on date-days_back
+	#-days_back defaults to 0, which is current price
+	:get_price(date,symbol,days_back)
+		days_back = days_back.number().int()
+		r = db.query(`
+			SELECT adjclose
+			FROM history_$symbol
+			WHERE date <= ?
+			ORDER BY date DESC
+			LIMIT 1 OFFSET ?
+		`,[date,days_back])
+		return r[0][0]
+
+	#get list of for prices for symbol of size days_back
+	#-if days_back is 0, the result is an empty list
+	#-prices returns in order of date ascending (oldest to newest)
+	:get_prices(date,symbol,days_back)
+		if !days_back
+			ERROR_ZERO_DAYS_BACK
+		r = db.query(`
+			SELECT adjclose
+			FROM history_$symbol
+			WHERE date <= ?
+			ORDER BY date DESC
+			LIMIT ?
+		`,[date,days_back])
+		return r.column(0).reverse()
+
+:main()
+	print simulation.run('2021/01/01',90,5,simulation.index,true)
+	

@@ -1,0 +1,55 @@
+##
+Backtest a strategy over a variety of time periods and calculate the sharpe ratio:
+https://en.wikipedia.org/wiki/Sharpe_ratio
+"Berkshire Hathaway had a Sharpe ratio of 0.76 for the period 1976 to 2011,
+higher than any other stock or mutual fund with a history of more than 30 years."
+-> Try to beat Buffett (0.76).
+##
+
+import('simulation.axm')
+
+:backtest(strategy,zero_risk_gain)
+	#90 symbols exist by 2015/07/06, so start at 2016
+	#(to avoid survivorship bias against stocks with no data before 2016)
+	all_dates = simulation.db.query(`
+		SELECT date
+		FROM symbols_by_date
+		WHERE date BETWEEN "2016/01/01" AND "2022/01/01"
+	`).column(0)
+	#do 200-day (~10-month) simulations with a period of 4 days (=50 allocations),
+	# which is purposely irregular to avoid seasonality (yearly/weekly patterns).
+	#score using sharpe ratio ((average gain - zero-risk gain) / standard deviation)
+	all_gains = []
+	for n,all_dates.len()
+		end_date = all_dates[n]
+		io.status(n,all_dates.len(),end_date)
+		gain = simulation.run(end_date,200,4,strategy)
+		all_gains.push(gain)
+	stats = matrix(all_gains).sub(zero_risk_gain).stats()
+	sharpe = stats.avg/stats.std
+	print stats
+	if zero_risk_gain
+		print 'sharpe:',sharpe
+	return sharpe
+
+:main(args)
+	if args.len()>1
+		#run specified strategy
+		name = args[1]
+		import('strategy_'+name+'.axm') #should define a function called :strategy()
+		print 'STRATEGY:',name
+		backtest(strategy,1.24)
+	else
+		#run simulation.index to determine zero-risk gain
+		print 'STRATEGY: index (baseline for zero-risk gain)'
+		backtest(simulation.index)
+		##
+		results:
+		{
+		  "avg" : 1.23935,
+		  "std" : 0.147469,
+		  "min" : 0.89334,
+		  "max" : 1.99704
+		}
+		=> 1.24 zero-risk gain
+		##

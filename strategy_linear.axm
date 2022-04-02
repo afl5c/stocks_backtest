@@ -1,0 +1,65 @@
+##
+Do linear regression on past prices.
+Interestingly, looking for a downward slope does better.
+
+Results (highest slope):
+{
+  "avg" : 0.0769157,
+  "std" : 0.368359,
+  "min" : -0.450017,
+  "max" : 1.51098
+}
+sharpe: 0.208807
+
+Results (lowest slope):
+{
+  "avg" : 0.107341,
+  "std" : 0.284133,
+  "min" : -0.449262,
+  "max" : 1.59829
+}
+sharpe: 0.377784
+##
+
+import('simulation.axm')
+
+:strategy(date,symbols,verbose)
+	days_back = 20 #one month
+	
+	#build x axis used for linear regression
+	x_axis = []
+	for x,days_back
+		x_axis.push(x)
+	X = matrix(x_axis)
+	
+	#do linear regression for each symbol
+	slopes = {}
+	for s,symbols
+		prices = simulation.get_prices(date,s,days_back)
+		if verbose
+			print date,s,prices
+		if prices.len()<days_back
+			continue
+		Y = matrix(prices).normalize()
+		W = X.fit(Y)
+		slope = W.get(1,0)
+		slopes[s] = slope
+	
+	slopes = slopes.pairs()
+	slopes.sort_by_index(1,false) #sort by slope, highest first
+	# slopes.sort_by_index(1,true) #sort by slope, lowest first
+	if verbose
+		print slopes
+	allocations = {}
+	for row,slopes.slice(0,5)
+		symbol = row[0]
+		slope = row[1]
+		allocations[symbol] = 1
+	return allocations
+
+:main()
+	print strategy('2021/01/01',['TSLA','ZM'],true)
+	#TSLA should move from ~$600 to ~$700
+	#ZM should move from ~$400 to ~$300
+
+
