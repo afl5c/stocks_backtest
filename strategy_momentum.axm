@@ -39,8 +39,8 @@ import('simulation.axm')
 		momentum[s] = m
 	
 	momentum = momentum.pairs()
-	momentum.sort_by_index(1,false) #sort by momentum, highest first
-	# momentum.sort_by_index(1,true) #sort by momentum, lowest first
+	# momentum.sort_by_index(1,false) #sort by momentum, highest first
+	momentum.sort_by_index(1,true) #sort by momentum, lowest first
 	if verbose
 		print momentum
 	allocations = {}

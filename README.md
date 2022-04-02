@@ -17,7 +17,7 @@ Axiom is a modern and simple programming language which lets you do more with le
 
 You will need to download the historical data from here:
 
-[https://aaronliu.s3.amazonaws.com/history.db][https://aaronliu.s3.amazonaws.com/history.db] (73 MB)
+https://aaronliu.s3.amazonaws.com/history.db (73 MB)
 
 And put it in the same folder as this code.
 

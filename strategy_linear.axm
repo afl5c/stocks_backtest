@@ -46,8 +46,8 @@ import('simulation.axm')
 		slopes[s] = slope
 	
 	slopes = slopes.pairs()
-	slopes.sort_by_index(1,false) #sort by slope, highest first
-	# slopes.sort_by_index(1,true) #sort by slope, lowest first
+	# slopes.sort_by_index(1,false) #sort by slope, highest first
+	slopes.sort_by_index(1,true) #sort by slope, lowest first
 	if verbose
 		print slopes
 	allocations = {}
