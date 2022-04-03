@@ -66,6 +66,11 @@ the strategy used here looks for downward momentum, not upward momentum.
 
 [momentum]: https://en.wikipedia.org/wiki/Momentum_investing
 
+How good is this? Apparently, [Berkshire Hathaway][berkshire_sharpe] had a Sharpe ratio of 0.76 from 1976 to 2011.
+So the momentum strategy is not as good as Warren Buffett. (The cheater strategy does better, but it cheats.)
+
+[berkshire_sharpe]: https://en.wikipedia.org/wiki/Sharpe_ratio#Use_in_finance
+
 # How to create your own strategies.
 
  - Create a file called `strategy_[name].axm`.
